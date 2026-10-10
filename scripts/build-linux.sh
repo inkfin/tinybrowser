@@ -4,5 +4,6 @@ set -eu
 apk add --no-cache nim build-base pkgconf brotli-dev brotli-static \
     libssh2-dev libssh2-static openssl-dev openssl-libs-static zlib-dev zlib-static
 nim --version
-make -j2 STATIC_LINK=1 LDFLAGS=-lz
+# Command-line LDFLAGS override Makefile additions; include -static explicitly.
+make -j2 STATIC_LINK=1 LDFLAGS='-static -lz'
 sh scripts/package.sh "$(uname -m)"

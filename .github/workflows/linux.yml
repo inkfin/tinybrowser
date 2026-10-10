@@ -37,14 +37,6 @@ jobs:
           fi
       - name: Build a static Linux release
         run: docker run --rm -v "$PWD:/src" -w /src alpine:3.22 sh scripts/build-linux.sh
-      - name: Install test-only terminal emulator
-        run: |
-          python3 -m venv work/qa
-          work/qa/bin/pip install pyte==0.8.2
-      - name: Exercise the packaged browser
-        run: |
-          mkdir -p work/screens
-          work/qa/bin/python tests/smoke.py "dist/tinybrowser-$(cat VERSION)-linux-${{ matrix.arch }}"
       - name: Check archive size and static binaries
         run: |
           du -h dist/*.tar.gz
@@ -55,6 +47,16 @@ jobs:
           fi
           cd dist
           sha256sum *.tar.gz > SHA256SUMS-${{ matrix.arch }}
+      - name: Install test-only terminal emulator
+        run: |
+          python3 -m venv work/qa
+          work/qa/bin/pip install pyte==0.8.2
+      - name: Exercise the packaged browser
+        env:
+          TINYBROWSER_TEST_HTTPS: "1"
+        run: |
+          mkdir -p work/screens
+          work/qa/bin/python tests/smoke.py "dist/tinybrowser-$(cat VERSION)-linux-${{ matrix.arch }}"
       - uses: actions/upload-artifact@v4
         with:
           name: tinybrowser-linux-${{ matrix.arch }}

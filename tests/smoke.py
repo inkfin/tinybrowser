@@ -39,6 +39,12 @@ with tempfile.TemporaryDirectory(prefix='tinybrowser-smoke-') as state:
     assert 'Error' not in dump.stderr and 'Exception' not in dump.stderr, dump.stderr
     (screens / 'reading-dump.txt').write_text(dump.stdout)
 
+    if os.environ.get('TINYBROWSER_TEST_HTTPS') == '1':
+        online = subprocess.run([binary, '-d', 'https://chawan.net/'], env=env,
+                                capture_output=True, text=True, timeout=30)
+        assert online.returncode == 0 and 'Chawan: TUI web browser' in online.stdout, online.stderr + online.stdout
+        (screens / 'live-chawan.txt').write_text(online.stdout)
+
     # Install to a path with spaces; preserve an existing personal config.
     prefix = Path(state) / 'prefix with spaces'
     subprocess.run([str(package / 'install.sh'), str(prefix)], check=True, capture_output=True)
