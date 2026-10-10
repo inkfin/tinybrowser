@@ -6,12 +6,21 @@
 
 ## Linux 下载
 
-Linux 流水线已启用，首次构建与 Release 正在验证。
+Linux x86_64 和 ARM64 的静态构建、终端运行和 HTTPS 检查已通过。版本标签自动发布带校验和的下载包。
 
 打开 [Releases](https://github.com/inkfin/tinybrowser/releases/latest)，按 CPU 选择：
 
 - `tinybrowser-*-linux-x86_64.tar.gz`：Intel/AMD 64 位。
 - `tinybrowser-*-linux-aarch64.tar.gz`：ARM64。
+
+首个版本 `0.1.0` 的下载与解压大小（MB，按 1,000,000 字节）：
+
+| 架构 | 压缩下载 | 解压文件合计 |
+| --- | --- | --- |
+| x86_64 | 6.13 MB | 12.38 MB |
+| ARM64 | 6.46 MB | 11.81 MB |
+
+两个正式 Release 下载包已重新下载并通过 SHA256 校验。
 
 下载同架构的 SHA256SUMS 文件，在同一目录运行 `sha256sum -c SHA256SUMS-x86_64`（ARM64 对应 aarch64）。
 
