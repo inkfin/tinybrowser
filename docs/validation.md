@@ -9,10 +9,9 @@ Passed on the development Mac with Nim 2.2.10:
 - Local-prefix installation with spaces in the path; user config preserved.
 - Live HTTPS text rendering of https://chawan.net/ and https://docs.python.org/3/.
 
-Linux x86_64/ARM64 static builds and GitHub Release publication are pending
-GitHub CLI workflow authorization. The prepared pipeline lives in
-`docs/pending-linux-workflow.yml`. Move it into `.github/workflows/linux.yml`
-after authorization, push main, inspect both CI jobs, then tag `tiny-v0.1.0`.
+GitHub workflow authorization is complete. The pipeline is enabled at
+`.github/workflows/linux.yml`. Linux x86_64/ARM64 static builds and the first
+GitHub Release are being verified.
 
 The Mac build is a development check; it does not prove Linux sandbox behavior,
 Linux static linking, or image rendering in every terminal. Generated terminal

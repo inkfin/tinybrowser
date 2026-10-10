@@ -6,7 +6,7 @@
 
 ## Linux 下载
 
-当前正在等待 GitHub CLI 的 `workflow` 授权。源码已发布，流水线暂放在 `docs/pending-linux-workflow.yml`；启用后的 Linux CI 和首个 Release 尚待验证，下载链接目前不可用。
+Linux 流水线已启用，首次构建与 Release 正在验证。
 
 打开 [Releases](https://github.com/inkfin/tinybrowser/releases/latest)，按 CPU 选择：
 
