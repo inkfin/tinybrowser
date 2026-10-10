@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+task_bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+task_root=$(CDPATH='' cd -- "$task_bin_dir/.." && pwd)
+export TINYBROWSER_SHARE="$task_root/share/tinybrowser"
+export CHA_DIR="${TINYBROWSER_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/tinybrowser}"
+export CHA_DATA_DIR="${TINYBROWSER_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/tinybrowser}"
+if [ "${1:-}" = '--version' ]; then
+    printf 'Tinybrowser %s\n' "$(cat "$TINYBROWSER_SHARE/VERSION")"
+    exec "$task_bin_dir/cha" --version
+fi
+if [ "${1:-}" = '--help' ]; then
+    printf 'Usage: tinybrowser [Chawan options] [URL or file ...]\nSpace: menu | Ctrl-P: find command | : command bar | F1: help\nConfig: %s/config.toml\n' "$CHA_DIR"
+    exit 0
+fi
+umask 077
+mkdir -p "$CHA_DIR" "$CHA_DATA_DIR"
+if [ ! -e "$CHA_DIR/config.toml" ]; then
+    # Noclobber makes simultaneous first launches safe.
+    (set -C; cat "$TINYBROWSER_SHARE/config.toml" > "$CHA_DIR/config.toml") 2>/dev/null || :
+fi
+if [ "$#" -eq 0 ]; then
+    set -- "$TINYBROWSER_SHARE/home.html"
+fi
+exec "$task_bin_dir/cha" -C "$CHA_DIR/config.toml" -V "$@"

@@ -1,148 +1,92 @@
-[Chawan](https://chawan.net) is a TUI web (and (S)FTP, Gopher, Gemini,
-...) browser with CSS, inline image and JavaScript support.
+# Tinybrowser
 
-It uses its own small browser engine developed from scratch, which can
-nevertheless display many websites in a manner similar to major graphical
-browsers.
+基于 [Chawan](https://chawan.net/) 的个人终端浏览器。保留上游 Git 历史，用一个小配置层提供 Vim 操作、原生弹出菜单、快捷命令和文字阅读排版。
 
-It can also be used as a terminal pager.
+浏览器不依赖 Chromium、WebKit、Electron、Node.js、Python 或 fzf。Node/Python 仅用于开发和 CI 检查。
 
-![Screenshot of Chawan displaying its SourceHut page](doc/showcase.png)
+## Linux 下载
 
-## Compiling
+当前正在等待 GitHub CLI 的 `workflow` 授权。源码已发布，流水线暂放在 `docs/pending-linux-workflow.yml`；启用后的 Linux CI 和首个 Release 尚待验证，下载链接目前不可用。
 
-A Unix-like operating system (Linux, \*BSD, Haiku, macOS, ...) is
-assumed.  On Windows you have to use WSL.
+打开 [Releases](https://github.com/inkfin/tinybrowser/releases/latest)，按 CPU 选择：
 
-1. Clone the Chawan repository:  
-   `git clone https://git.sr.ht/~bptato/chawan && cd chawan`
-2. Install the Nim compiler: <https://nim-lang.org/install.html>
-	* Please use 2.0.0 or newer, ideally 2.2.10.  (`nim -v` displays your
-	  Nim compiler's version.)
-	  The 1.6 branch from 1.6.14 upwards may still work, but it isn't
-	  recommended unless you have no other choice.
-	* If you are using a 32-bit system, you probably need 2.2 or newer.
-	  2.0 may still work if you `export CFLAGS=-fpermissive`.
-3. Install the following dependencies:
-	* [OpenSSL](https://www.openssl.org/) (or
-	  [LibreSSL](https://www.libressl.org/))
-	* [libssh2](https://libssh2.org/)
-	* [brotli](https://github.com/google/brotli)
-	* pkg-config
-	* GNU make (gmake on non-GNU systems)
-	* Quick copy-paste for Debian:
-	  `apt install libssh2-1-dev libssl-dev libbrotli-dev pkg-config make`
-4. Run `make` (without arguments).
-5. Install using `make install` (e.g. `sudo make install`).
+- `tinybrowser-*-linux-x86_64.tar.gz`：Intel/AMD 64 位。
+- `tinybrowser-*-linux-aarch64.tar.gz`：ARM64。
 
-Then, try:
+下载同架构的 SHA256SUMS 文件，在同一目录运行 `sha256sum -c SHA256SUMS-x86_64`（ARM64 对应 aarch64）。
 
-```bash
-$ cha -V # open in visual mode for a list of default keybindings
-$ cha example.org # open your favorite website directly from the shell
-$ mancha cha # read the cha(1) man page using `mancha'
+```sh
+tar -xzf tinybrowser-0.1.0-linux-x86_64.tar.gz
+cd tinybrowser-0.1.0-linux-x86_64
+./bin/tinybrowser
+# 可选：安装到 ~/.local，配置不会被覆盖
+./install.sh
+# ~/.local/bin 在 PATH 中时：
+tinybrowser https://example.org
 ```
 
-## Packages
+使用静态链接的 musl Linux 构建；不需要安装浏览器引擎。HTTPS 仍需要系统 CA 证书（发行版的 `ca-certificates` 包）。图片需要支持 Kitty 图形协议或 Sixel 的终端，建议先在 Kitty 中直接运行。纯文字终端仍可使用文字功能。
 
-You can also install Chawan from packages maintained by volunteers.
-Known stable packages are:
+## 操作
 
-* Alpine Linux: <https://pkgs.alpinelinux.org/packages?name=chawan>
-* Arch Linux: <https://archlinux.org/packages/extra/x86_64/chawan/>
-* FreeBSD: <https://www.freshports.org/www/chawan/>
-* Homebrew: <https://formulae.brew.sh/formula/chawan>
-* NixOS: <https://search.nixos.org/packages?show=chawan>
-* Slackware (SBo): <https://slackbuilds.org/repository/15.0/network/chawan/>
-* Void Linux: <https://voidlinux.org/packages/?arch=x86_64&q=chawan>
+| 按键 | 功能 |
+| --- | --- |
+| `Space` | 居中菜单，`j/k` 或方向键选择，Enter 执行，Esc/q 取消 |
+| `:` | 命令栏，例如 `open https://example.org`、`search Nim`、`images` |
+| `Ctrl-P` | 按名称/关键词查找命令，再从匹配菜单选择 |
+| `hjkl`、`gg/G`、`Ctrl-d/u` | 移动、首尾、半页；支持 `10j` 等计数 |
+| `f/F` | 跟随链接提示 / 仅显示提示 |
+| `/ ? n N` | 页内搜索、前后匹配 |
+| `H/L`、`gt/gT`、`x` | 前后 buffer、前后标签、关闭 buffer |
+| `o/O`、`r` | 打开/编辑 URL、刷新 |
+| `yy/yl`、`b/a` | 复制页面/链接 URL、书签/添加书签 |
+| `gi/gr` | 切换图片 / 当前页面的网站 CSS |
+| `gh`、`F1`、`q` | 主页、帮助、退出 |
 
-Unstable packages (tip of the `master` branch):
+命令栏支持 `open/o`、`search/s`、`tabopen/t`、`buffers`、`bookmarks`、`bookmark`、`history`、`reload`、`images`、`style`、`javascript`、`copy`、`save`、`source`、`home`、`help`、`quit/q`。
+输入按固定命令分派，不会当作 JavaScript 或 shell 执行。完整帮助也可在浏览器里按 F1 查看。
 
-* AUR: <https://aur.archlinux.org/packages/chawan-git>
-* AppImage: <https://git.lerch.org/lobo/chawan-appimage/>
-* Homebrew (using `--HEAD`): <https://formulae.brew.sh/formula/chawan>
+## 默认行为与自定义
 
-Each [release](https://chawan.net/news/index.html) also comes with static
-binaries.  However, their dependencies can quickly get out of date, so
-installing a package or compiling Chawan yourself is preferable.
+图片默认开启；网站 JavaScript 和 Cookie 默认关闭。个人菜单脚本独立于网站 JavaScript，不需要开启网页脚本才能操作。`:javascript` 只切换当前页面。默认关闭网站 CSS，应用 88 列正文宽度、中文/代码块/表格阅读样式；`gr` 切换网站 CSS，不隐藏网站正文。
 
-## Features
+首次启动将默认配置复制到 `~/.config/tinybrowser/config.toml`。后续更新保留你的修改。历史、书签等保存在 `~/.local/share/tinybrowser/`。支持 XDG 路径，以及 `TINYBROWSER_CONFIG_DIR` / `TINYBROWSER_DATA_DIR` 指定独立配置。
 
-Currently implemented features are:
+主要修改入口：
 
-* multi-processing, incremental loading of documents
-* HTML5 support with various encodings (UTF-8, Shift_JIS, GBK, ...), forms,
-  cookies
-* [CSS](doc/css.md)-based layout engine: supports flow layout, table layout,
-  flexbox layout, double-width characters (CJK)
-* user-programmable keybindings (defaults are vi(m)-like), mouse support
-* JavaScript support in documents (disabled by default)
-* inline image support with [Sixel](https://en.wikipedia.org/wiki/Sixel) or
-  [Kitty protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)
-  (disabled by default; see [doc/image.md](doc/image.md) on how to enable)
-* supports several network [protocols](doc/protocols.md): HTTP(S), (S)FTP,
-  Gopher, Gemini, Finger, Spartan
-* markdown viewer (`cha README.md`), man page viewer (`mancha`)
-* [user-defined protocols](doc/urimethodmap.md) and
-  [file formats](doc/mailcap.md)
-* syscall filter based sandboxing on FreeBSD, OpenBSD and Linux (through
-  capsicum, pledge and seccomp-bpf)
-* bookmarks, history
+- `personal/config.toml`：默认快捷键、排版、逐站策略。
+- `personal/ui.js`：菜单与命令注册；运行时文件在 `share/tinybrowser/`。
+- `personal/home.html` / `help.html`：主页和帮助。
+- `src/`：只有需要扩展引擎时才修改。
 
-...with a lot more [planned](todo).
+当前版本先完成个人浏览器基础功能，没有嵌入 AI 模型或自动把网页发送给 AI。可让编码助手修改这个仓库；未来按键调用 AI 可接成按需运行的外部工具。
 
-## Bugs, technical issues, etc.
+## 构建与发布
 
-First, read the [troubleshooting](doc/troubleshooting.md) document.
-If it doesn't help, [open a ticket](https://todo.sr.ht/~bptato/chawan).
+每次 main 推送或 PR 会在 GitHub Actions 原生 x86_64 / ARM64 runner 上编译 Alpine 静态包。两种架构都经过命令逻辑检查、真实 PTY 菜单/命令栏/排版/PNG 输出检查，成功后上传 Actions artifacts。
 
-When using the ticket tracker, please make sure your tickets are valid
-markdown, or they become unreadable on the web interface.
+更新 VERSION 和 `docs/release-notes.md` 后，推送相同版本的 `tiny-v*` 标签：
 
-If you want to send plain text e-mails not formatted as markdown,
-use the [mailing list](mailto:~bptato/chawan-devel@lists.sr.ht) instead.
-This is also where you can send patches.
+```sh
+git tag tiny-v0.1.0
+git push origin tiny-v0.1.0
+```
 
-If you're having troubles accessing SourceHut, you can also use the
-[Codeberg mirror](https://codeberg.org/bptato/chawan).
+两种架构的构建和检查全部成功后，自动创建 GitHub Release，附带两个压缩包和 SHA256SUMS 文件。上游的 `v*` 标签不会触发个人浏览器发布。
 
-## Documentation index
+本地 Linux 构建（需要 Docker）：
 
-Chawan's documentation is available as man pages (`man cha`) and as
-Markdown files.
+```sh
+docker run --rm -v "$PWD:/src" -w /src alpine:3.22 sh scripts/build-linux.sh
+node --test tests/personal.test.cjs
+```
 
-* build/compilation options: [doc/build.md](doc/build.md)
-* `cha` man page: [doc/cha.md](doc/cha.md)
-* `mancha` man page: [doc/mancha.md](doc/mancha.md)
-* configuration options: [doc/config.md](doc/config.md)
-* API description (for keybindings): [doc/api.md](doc/api.md)
-* mailcap: [doc/mailcap.md](doc/mailcap.md)
-* mime.types: [doc/mime.types.md](doc/mime.types.md)
-* urimethodmap: [doc/urimethodmap.md](doc/urimethodmap.md)
-* local CGI: [doc/cgi.md](doc/cgi.md)
-* protocols: [doc/protocols.md](doc/protocols.md)
-* inline images: [doc/image.md](doc/image.md)
-* CSS: [doc/css.md](doc/css.md)
-* terminal compatibility: [doc/terminal.md](doc/terminal.md)
-* troubleshooting: [doc/troubleshooting.md](doc/troubleshooting.md)
+原生构建依赖与命令见 [README.upstream.md](README.upstream.md)。上游来源与更新流程见 [UPSTREAM.md](UPSTREAM.md)。
 
-If you're interested in modifying the code:
+## 使用边界
 
-* architecture: [doc/architecture.md](doc/architecture.md)
-* style guide, debugging tips, etc.: [doc/hacking.md](doc/hacking.md)
+这是终端文字浏览器，不保证任意网站兼容或完全无崩溃。静态文档、博客和文字阅读是主要用途；复杂 JavaScript 应用、视频和现代登录流程需逐站验证。图片在 tmux 等复用器中可能有限制。CI 验证离线 fixture 和图片协议输出，不等于验证所有终端或真实网站。
 
-## Relatives
+## 许可证
 
-[w3m](https://sr.ht/~rkta/w3m) has been the main inspiration for Chawan;
-although the two do not share code, the UI and feature set is similar.
-
-[Ferus](https://github.com/ferus-web/ferus) is a separate graphical browser
-engine written in Nim, which uses Chawan's HTML parser.
-
-## License
-
-Chawan is dedicated to the public domain. See the UNLICENSE file for details.
-
-Chawan also includes and depends on several permissively licensed libraries.
-For further details, check the <about:license> page in Chawan, or read
-the same document [here](res/license.md).
+Chawan 与个人定制代码使用公共领域声明，见 [UNLICENSE](UNLICENSE)。依赖组件保留各自许可证，见 [res/license.md](res/license.md)；下载包内附带这些声明。

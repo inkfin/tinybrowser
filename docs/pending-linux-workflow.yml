@@ -1,0 +1,90 @@
+name: Linux builds
+on:
+  push:
+    branches: [main]
+    tags: ['tiny-v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check personal commands
+        run: node --test tests/personal.test.cjs
+      - name: Check version and shell scripts
+        run: |
+          for script in scripts/*.sh personal/tinybrowser; do sh -n "$script"; done
+          if [[ "$GITHUB_REF" == refs/tags/tiny-v* ]]; then
+            test "${GITHUB_REF#refs/tags/tiny-v}" = "$(cat VERSION)"
+          fi
+      - name: Build a static Linux release
+        run: docker run --rm -v "$PWD:/src" -w /src alpine:3.22 sh scripts/build-linux.sh
+      - name: Install test-only terminal emulator
+        run: |
+          python3 -m venv work/qa
+          work/qa/bin/pip install pyte==0.8.2
+      - name: Exercise the packaged browser
+        run: |
+          mkdir -p work/screens
+          work/qa/bin/python tests/smoke.py "dist/tinybrowser-$(cat VERSION)-linux-${{ matrix.arch }}"
+      - name: Check archive size and static binaries
+        run: |
+          du -h dist/*.tar.gz
+          file "dist/tinybrowser-$(cat VERSION)-linux-${{ matrix.arch }}/bin/cha"
+          if readelf -l "dist/tinybrowser-$(cat VERSION)-linux-${{ matrix.arch }}/bin/cha" | grep -q INTERP; then
+            echo 'Unexpected dynamic interpreter' >&2
+            exit 1
+          fi
+          cd dist
+          sha256sum *.tar.gz > SHA256SUMS-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tinybrowser-linux-${{ matrix.arch }}
+          path: |
+            dist/*.tar.gz
+            dist/SHA256SUMS-*
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terminal-checks-${{ matrix.arch }}
+          path: work/screens/
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/tiny-v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: tinybrowser-linux-*
+          path: release-assets
+          merge-multiple: true
+      - name: Publish tested Linux downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" release-assets/* \
+            --verify-tag --title "Tinybrowser ${GITHUB_REF_NAME#tiny-v}" \
+            --notes-file docs/release-notes.md

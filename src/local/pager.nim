@@ -128,6 +128,7 @@ type
     numload {.jsgetset.}: int # number of pages currently being loaded
     term*: Terminal
     timeouts*: TimeoutState
+    escapeTimeout: Option[int32]
     tmpfSeq: uint
     attrs: WindowAttributes
     pidMap: Table[int, string] # pid -> command
@@ -629,12 +630,23 @@ proc handleKeyEnd(pager: Pager; e: InputEvent): int =
   JS_FreeValue(ctx, res)
   1
 
+proc flushEscape(ctx: JSContext; pager: Pager): JSValue {.jsfunc.} =
+  pager.escapeTimeout = none(int32)
+  if pager.term.takePendingEscape():
+    pager.inputBuffer &= '\e'
+    if pager.handleKeyEnd(InputEvent(t: ietKeyEnd)) < 0:
+      return JS_EXCEPTION
+  return JS_UNDEFINED
+
 proc handleUserInput(pager: Pager): JSValue =
   let res = pager.term.ahandleRead()
   if res.isErr:
     return pager.jsQuit(1)
   if not res.get:
     return JS_UNDEFINED
+  if pager.escapeTimeout.isSome:
+    pager.timeouts.clearTimeout(pager.escapeTimeout.get)
+    pager.escapeTimeout = none(int32)
   let pasteHack = pager.mousePaste and not pager.term.hasBracketedPaste()
   while e := pager.term.areadEvent():
     case e.t
@@ -650,6 +662,13 @@ proc handleUserInput(pager: Pager): JSValue =
       of -1: return JS_EXCEPTION
       of 0: break
       else: discard
+  # A lone Escape must cancel prompts without consuming the next key as Meta.
+  # Leave a short grace period for split terminal escape sequences over SSH.
+  if pager.term.pendingEscape():
+    let handler = pager.jsctx.toJS("pager.flushEscape()")
+    pager.escapeTimeout = some(pager.timeouts.setTimeout(ttTimeout,
+      handler, 150, []))
+    JS_FreeValue(pager.jsctx, handler)
   if pasteHack:
     # hack: when we have no bracketed paste, we pretend that all keys sent
     # together on middle click are a single event.
@@ -1784,6 +1803,7 @@ type GotoURLDict = object of JSDict
   save {.jsdefault.}: bool
   history {.jsdefault: true.}: bool
   scripting {.jsdefault.}: Option[ScriptingMode]
+  styling {.jsdefault.}: Option[bool]
   cookie {.jsdefault.}: Option[CookieMode]
   charset {.jsdefault.}: Option[Charset]
   url {.jsdefault.}: Option[URL]
@@ -1808,6 +1828,7 @@ proc gotoURLImpl(ctx: JSContext; pager: Pager; v: JSValueConst;
   pager.initGotoURL(request, t.charset.get(csUnknown),
     t.referrer.get(nil), t.cookie, loaderConfig, bufferConfig, filterCmd)
   bufferConfig.scripting = t.scripting.get(bufferConfig.scripting)
+  bufferConfig.styling = t.styling.get(bufferConfig.styling)
   let init = pager.gotoURL0(request, t.save, t.history, bufferConfig,
     loaderConfig, t.title, t.contentType.get(""), t.redirectDepth,
     t.url.get(nil), filterCmd)

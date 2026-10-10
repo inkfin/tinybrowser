@@ -1132,6 +1132,31 @@ Pager.prototype.closeMenu = function() {
     }
 }
 
+/* Tinybrowser: reuse the native select widget, without a second TUI runtime. */
+Pager.prototype.choose = async function(options) {
+    if (!options.length)
+        return -1;
+    if (this.menu)
+        this.closeMenu();
+    const width = Math.max(...options.map(x => x ? x.length : 0)) + 4;
+    const x = Math.max(0, Math.floor((this.bufWidth - width) / 2));
+    const y = Math.max(0, Math.floor((this.bufHeight - options.length - 2) / 2));
+    let menu;
+    const selected = await new Promise(resolve => {
+        menu = new Select(options, 0, x, y,
+                          this.bufWidth, this.bufHeight, resolve);
+        this.menu = menu;
+    });
+    if (this.menu === menu)
+        this.menu = null;
+    return selected;
+}
+
+/* Text is returned to a dispatcher, never evaluated as JavaScript. */
+Pager.prototype.prompt = function(label, current = "") {
+    return this.setLineEdit("command", label, {current});
+}
+
 /* public */
 Pager.prototype.openEditor = function(input) {
     let tmpf = this.getTempFile();

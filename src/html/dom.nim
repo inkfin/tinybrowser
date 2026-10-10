@@ -7017,7 +7017,7 @@ proc updateSheetFinish(window: Window; this: SheetElement; res: LoadSheetResult;
 proc updateSheet*(this: HTMLStyleElement) =
   let document = this.document
   let window = document.window
-  if window != nil:
+  if window != nil and window.settings.styling:
     window.parseStylesheet(this, this.textContent, document.baseURL,
       DefaultCharset, CAtomNull, updateSheetFinish, nil, 0)
 

@@ -1191,6 +1191,15 @@ proc areadCharBacktrack(term: Terminal): Opt[char] =
     term.eparser.state = esNone
   return term.areadChar()
 
+proc pendingEscape*(term: Terminal): bool =
+  term.eparser.state == esEsc
+
+proc takePendingEscape*(term: Terminal): bool =
+  if not term.pendingEscape():
+    return false
+  term.eparser.state = esNone
+  return true
+
 proc areadEvent*(term: Terminal): Opt[InputEvent] =
   var epr = eprNone
   while epr == eprNone:

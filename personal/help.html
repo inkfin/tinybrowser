@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Tinybrowser help</title><body>
+<h1>Keys &amp; commands</h1>
+<p>Space opens the menu. Use j/k or arrows to select, Enter to run, Escape/q to cancel.</p>
+<p>Ctrl-P asks for a command name, then shows matching actions. The : bar accepts named commands; it does not evaluate JavaScript.</p>
+<h2>Navigation</h2><pre>hjkl         Move (counts work: 10j)
+gg / G       First / last line
+Ctrl-d/u     Half page down / up
+/ ? n N      Search, previous/next match
+f / F        Follow link hint / show hints
+H / L        Previous / next buffer
+gt / gT      Next / previous tab
+x            Close buffer
+o / O        Open / edit URL
+r            Reload
+yy / yl      Copy page / link URL
+b / a        Bookmarks / bookmark page
+gi / gr      Images / website CSS
+gh / F1      Home / help
+q            Close menu, or quit browser</pre>
+<h2>Command bar examples</h2><pre>:open https://example.org
+:search Nim language
+:tabopen https://chawan.net
+:buffers
+:bookmarks
+:history
+:images
+:style
+:javascript
+:copy
+:save
+:source
+:home
+:help
+:q</pre>
+<p>Website JS remains disabled unless explicitly toggled for that page. Reader styling hides no content; gr restores website CSS.</p>
+<p>Only one native menu runs at a time. Small terminals scroll the menu. Images depend on Kitty or Sixel support; direct terminal use works best.</p>
+</body></html>

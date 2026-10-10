@@ -3,3 +3,7 @@
 /target/
 /.obj/
 /test/net/run
+/work/
+/dist/
+__pycache__/
+/tests/fixtures/pixel.png

@@ -1,0 +1,83 @@
+# Copied only on first launch. Your edits survive future binary updates.
+[start]
+visual-home = 'about:blank'
+startup-script = 'eval(readFile(getenv("TINYBROWSER_SHARE") + "/ui.js"))'
+
+[buffer]
+images = true
+scripting = false
+cookie = false
+styling = false
+user-style = '''
+body { max-width: 88ch; margin: 0 auto; padding: 1ch; }
+p, ul, ol, blockquote, pre, table { margin-top: 1em; margin-bottom: 1em; }
+h1, h2, h3, h4 { font-weight: bold; margin-top: 1em; margin-bottom: 1em; }
+a[href] { text-decoration: underline; color: -cha-ansi(cyan); }
+pre { white-space: pre-wrap; }
+blockquote { margin-left: 2ch; border-left: 1px solid; padding-left: 2ch; }
+img { max-width: 100%; height: auto; }
+table { border-collapse: collapse; }
+th, td { padding-left: 1ch; padding-right: 1ch; }
+'''
+
+[input]
+vi-numeric-prefix = true
+link-hint-chars = 'asdfghjklqwertyuiopzxcvbnm'
+
+[display]
+image-mode = 'auto'
+highlight-color = '-cha-ansi(cyan)'
+
+[search]
+wrap = true
+ignore-case = 'auto'
+
+[page]
+'h' = 'cursorLeft'
+'j' = 'cursorDown'
+'k' = 'cursorUp'
+'l' = 'cursorRight'
+'g g' = 'gotoLineOrStart'
+'G' = 'gotoLineOrEnd'
+'C-d' = 'halfPageDown'
+'C-u' = 'halfPageUp'
+'/' = 'isearchForward'
+'?' = 'isearchBackward'
+'n' = 'searchNext'
+'N' = 'searchPrev'
+'f' = 'toggleLinkHintsAutoClick'
+'F' = 'toggleLinkHints'
+'H' = 'prevBuffer'
+'L' = 'nextBuffer'
+'g t' = '() => pager.nextTab()'
+'g T' = '() => pager.prevTab()'
+'x' = 'discardBuffer'
+'o' = 'loadEmpty'
+'O' = 'load'
+'r' = 'reloadBuffer'
+'y y' = 'copyURL'
+'y l' = 'copyCursorLink'
+'b' = 'openBookmarks'
+'a' = 'addBookmark'
+':' = '() => tiny.commandBar()'
+'SPC' = '() => tiny.menu()'
+'C-p' = '() => tiny.palette()'
+'g i' = 'toggleImages'
+'g r' = '() => tiny.toggleStyle()'
+'g h' = '() => tiny.home()'
+'F1' = '() => tiny.help()'
+'ESC' = '() => tiny.cancel()'
+'q' = '() => tiny.closeOrQuit()'
+
+[line]
+'ESC' = 'line.cancel'
+'C-n' = 'line.nextHist'
+'C-p' = 'line.prevHist'
+
+[omnirule.s]
+match = '^s:'
+substitute-url = 'x => "https://lite.duckduckgo.com/lite/?q=" + encodeURIComponent(x.slice(2))'
+
+[omnirule.w]
+match = '^w:'
+substitute-url = 'x => "https://en.wikipedia.org/w/index.php?title=Special:Search&search=" + encodeURIComponent(x.slice(2))'

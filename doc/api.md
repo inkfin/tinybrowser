@@ -302,6 +302,18 @@ Following properties (functions/getters) are defined by `Pager`:
 `closeMenu()`
 : Closes the menu if it is opened.
 
+`choose(options)` (Tinybrowser)
+: Show a centered native popup menu for an array of strings. Returns a promise
+  resolving to the selected index, or -1 on cancellation. Empty arrays return -1.
+  Opening a new menu cancels the previous one.
+
+`prompt(label, current = "")` (Tinybrowser)
+: Show a command-line input prompt. Returns a promise resolving to the text,
+  or null on cancellation. The text is not evaluated as JavaScript.
+
+The Tinybrowser `gotoURL` options additionally accept `styling` to override
+author CSS for that load. Read `pager.buffer.init.styling` for the active value.
+
 `buffer`
 : Getter for the currently displayed buffer.  Returns a `Buffer` object;
   see below.

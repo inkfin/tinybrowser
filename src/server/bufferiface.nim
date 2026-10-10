@@ -432,6 +432,9 @@ proc history(init: BufferInit): bool {.jsfget.} =
 proc scripting(init: BufferInit): ScriptingMode {.jsfget.} =
   init.config.scripting
 
+proc styling(init: BufferInit): bool {.jsfget.} =
+  init.config.styling
+
 proc charsetOverride(ctx: JSContext; init: BufferInit): JSValue {.jsfget.} =
   let charset = init.config.charsetOverride
   if charset != csUnknown:
