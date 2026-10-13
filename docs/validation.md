@@ -34,7 +34,37 @@ The image visibility toggle remains temporary: reload restores the configured
 default. Persistent sidebar, live command filtering, and a cross-tab picker
 remain future work.
 
-Linux x86_64/ARM64 and Darwin ARM64/Intel package acceptance is pending CI.
+Linux x86_64/ARM64 and Darwin ARM64/Intel package acceptance passed on
+commit `e06792fa`:
+https://github.com/inkfin/tinybrowser/actions/runs/38341800977
+
+All four native runners passed 32 command/installer checks, built the browser,
+and ran the complete PTY/HTTP/HTTPS suite on the extracted archive. Both Linux
+executables are static musl ELF. Both Darwin builds use macOS 15 runners,
+check the deployment minimum of static archives, and reject non-system
+dynamic-library dependencies in the shipped executables.
+
+The tagged build repeated all four platform checks, then published the release:
+https://github.com/inkfin/tinybrowser/actions/runs/38342283964
+https://github.com/inkfin/tinybrowser/releases/tag/tiny-v0.2.0
+
+All four final Release archives were downloaded again and matched their
+published SHA256SUMS. Sizes below are decimal MB; unpacked sizes count regular
+file bytes, not filesystem allocation:
+
+| Package | Compressed | Unpacked |
+| --- | ---: | ---: |
+| Linux x86_64 | 6.14 | 12.40 |
+| Linux ARM64 | 6.47 | 11.82 |
+| Darwin ARM64 | 5.42 | 10.37 |
+| Darwin Intel | 5.23 | 10.67 |
+
+The public versioned installer was downloaded, compared with the tagged source,
+and executed into an isolated prefix on the development Mac. Its published
+Darwin ARM64 package reported Tinybrowser 0.2.0 and rendered both the Unicode
+fixture and live HTTPS with a fresh profile and the default system CA bundle.
+The Darwin binary reports that the engine sandbox is unavailable; Linux tests
+retain Chawan's enabled sandbox.
 
 # Initial validation (2026-10-10)
 
