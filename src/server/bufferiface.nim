@@ -52,6 +52,7 @@ type
     bcFindRevNthLink = "findRevNthLink"
     bcForceReshape = "forceReshape"
     bcGetLines = "getLines"
+    bcGetLinkAt = "getLinkAt"
     bcGetLinks = "getLinks"
     bcGetSelectionText = "getSelectionText"
     bcGetTitle = "getTitle"
@@ -1497,6 +1498,13 @@ proc getSelectionText(ctx: JSContext; iface: BufferInterface;
 proc getTitle(ctx: JSContext; iface: BufferInterface): JSValue {.jsfunc.} =
   ctx.withPacketWriter iface, bcGetTitle, w:
     discard
+  return addPromise[string](ctx, iface)
+
+proc getLinkAt(ctx: JSContext; iface: BufferInterface; x, y: int): JSValue
+    {.jsfunc.} =
+  ctx.withPacketWriter iface, bcGetLinkAt, w:
+    w.swrite(x)
+    w.swrite(y)
   return addPromise[string](ctx, iface)
 
 proc gotoAnchor(ctx: JSContext; iface: BufferInterface; anchor: string;

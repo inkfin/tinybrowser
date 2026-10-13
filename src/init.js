@@ -104,6 +104,7 @@ globalThis.cmd = {
             history: buffer.init.history,
             replace: buffer,
             scripting: !buffer.init.scripting,
+            styling: buffer.init.styling,
             cookie: buffer.init.cookie
         });
         if (buffer2)
@@ -116,6 +117,7 @@ globalThis.cmd = {
             history: buffer.init.history,
             replace: buffer,
             scripting: buffer.init.scripting,
+            styling: buffer.init.styling,
             cookie: !buffer.init.cookie
         });
         if (buffer2)
@@ -848,9 +850,13 @@ Pager.prototype.reload = function() {
         contentType: old.init.contentType,
         replace: old,
         history: old.init.history,
-        charset: old.init.charsetOverride
+        charset: old.init.charsetOverride,
+        scripting: old.init.scripting,
+        styling: old.init.styling,
+        cookie: old.init.cookie
     })
-    buffer.init.copyCursorPos(old.iface ?? old.init);
+    if (buffer)
+        buffer.init.copyCursorPos(old.iface ?? old.init);
 }
 
 /* public */
@@ -1133,14 +1139,14 @@ Pager.prototype.closeMenu = function() {
 }
 
 /* Tinybrowser: reuse the native select widget, without a second TUI runtime. */
-Pager.prototype.choose = async function(options) {
+Pager.prototype.choose = async function(options, position = {}) {
     if (!options.length)
         return -1;
     if (this.menu)
         this.closeMenu();
     const width = Math.max(...options.map(x => x ? x.length : 0)) + 4;
-    const x = Math.max(0, Math.floor((this.bufWidth - width) / 2));
-    const y = Math.max(0, Math.floor((this.bufHeight - options.length - 2) / 2));
+    const x = Math.max(0, position.x ?? Math.floor((this.bufWidth - width) / 2));
+    const y = Math.max(0, position.y ?? Math.floor((this.bufHeight - options.length - 2) / 2));
     let menu;
     const selected = await new Promise(resolve => {
         menu = new Select(options, 0, x, y,
@@ -1402,6 +1408,16 @@ Pager.prototype.handleMouseInput = async function(input) {
         if (button == "left") {
             switch (input.t) {
             case "move":
+                if (this.modernMouse && pressedX >= 0 && pressedY >= 0 &&
+                    pressedY < buffer.height) {
+                    if (mouse.moveType != "select") {
+                        buffer.setAbsoluteCursorXY(pressedX, pressedY);
+                        await buffer.startSelection("normal", true, buffer.cursorx);
+                        mouse.moveType = "select";
+                    }
+                    buffer.setAbsoluteCursorXY(input.x, Math.min(input.y, buffer.height - 1));
+                    break;
+                }
                 if (click < 1)
                     break;
                 switch (mouse.moveType) {
@@ -1430,8 +1446,8 @@ Pager.prototype.handleMouseInput = async function(input) {
                     const px = buffer.cursorx;
                     const py = buffer.cursory;
                     buffer.setAbsoluteCursorXY(input.x, input.y);
-                    if (px == buffer.cursorx && py == buffer.cursory)
-                        buffer.click(click);
+                    if (this.modernMouse || px == buffer.cursorx && py == buffer.cursory)
+                        await buffer.click(this.modernMouse ? 1 : click);
                 }
                 break;
             case "press":
@@ -1442,7 +1458,11 @@ Pager.prototype.handleMouseInput = async function(input) {
         } else if (button == "middle") {
             if (input.t == "release" && input.x == pressedX &&
                 input.y == pressedY && input.y < buffer.height) {
-                this.discardBuffer(buffer);
+                if (this.modernMouse) {
+                    buffer.setAbsoluteCursorXY(input.x, input.y);
+                    await buffer.openLinkInNewTab();
+                } else
+                    this.discardBuffer(buffer);
             }
         } else if (input.t == "press") {
             switch (button) {
@@ -1456,7 +1476,7 @@ Pager.prototype.handleMouseInput = async function(input) {
                     }
                     if (!canceled) {
                         this.openMenu(input.x, input.y);
-                        this.menu.unselect();
+                        this.menu?.unselect();
                     }
                 }
                 break;
@@ -1644,6 +1664,8 @@ Pager.prototype.replaceWith = function(old, replacement) {
     }
     if (this.buffer == old)
         this.setBuffer(replacement);
+    else if (replacement.tab.current == old)
+        replacement.tab.current = replacement;
 }
 
 /* private */
@@ -1765,12 +1787,13 @@ const ReTextStart = /\S/gu;
                 }
                 pager.numload--;
                 const save = this.init.save;
-                if (save || !pager.gotoURLHash(request, this)) {
+                if (save || pager.buffer != this || !pager.gotoURLHash(request, this)) {
                     const nc = pager.gotoURL(request, {
                         history: this.init.history,
                         save: save,
                         redirectDepth: redirectDepth + 1,
-                        referrer: this.init
+                        referrer: this.init,
+                        suppressAdd: true
                     });
                     if (nc != null) {
                         const replace = this.#popReplace();
@@ -1802,8 +1825,12 @@ const ReTextStart = /\S/gu;
             if (password != null) {
                 url.username = username;
                 url.password = password;
-                const buffer2 = pager.gotoURL(url, {referrer: this.init});
-                pager.replaceWith(this, buffer2);
+                const buffer2 = pager.gotoURL(url, {
+                    referrer: this.init,
+                    suppressAdd: true
+                });
+                if (buffer2 != null)
+                    pager.replaceWith(this, buffer2);
             } else
                 pager.discardBuffer(this);
             break;
@@ -3004,6 +3031,25 @@ const ReTextStart = /\S/gu;
             return;
         const res = await iface.click(this.cursorx, this.cursory, n);
         return this.#onclick(res);
+    }
+
+    /* Open an actual anchor without dispatching page JS or a form submit. */
+    /* public */ async openLinkInNewTab(background = true) {
+        const iface = this.iface;
+        if (iface == null)
+            return;
+        const href = await iface.getLinkAt(this.cursorx, this.cursory);
+        const url = URL.parse(href);
+        if (!url || !["http:", "https:", "file:"].includes(url.protocol))
+            return;
+        const opened = pager.gotoURL(url, {referrer: this.init});
+        if (opened == null)
+            return;
+        pager.addTab(opened);
+        if (background) {
+            pager.setBuffer(this);
+            pager.alert("Opened link in background tab (gt to switch).");
+        }
     }
 
     /* public */ async saveLink() {

@@ -1,3 +1,41 @@
+# 0.2.0 validation (2026-10-13)
+
+Local Darwin ARM64 checks passed with a freshly compiled and packaged browser:
+
+- Node checks covering the fixed command dispatcher, menu cancellation,
+  URL handling, safe external opening, and the release installer.
+- Real 100x32 and 45x20 PTYs: single-click navigation, middle-click background
+  tabs, right-click menus, drag selection, and exact selected-text copying.
+- Real loopback HTTP with chained 302 responses: background navigation keeps
+  focus, tab switching reaches the final URL, and foreground history works.
+  Input/submit controls cannot be mistaken for links or submitted by a
+  middle-click; ordinary text editing still works.
+- Reading position survived website CSS changes and reload; the chosen CSS
+  mode survived reload too.
+- Shell metacharacters in a URL reached a controlled external opener as one
+  literal argument. Both Linux and Darwin helper branches were exercised.
+- Existing Unicode, code/table, command bar, finder, PNG Kitty protocol,
+  profile preservation, and clean-exit checks still passed.
+- All macOS executables use system dynamic libraries only. Local Homebrew
+  archives require macOS 26, so this development package is not a release
+  artifact; macOS 15 release compatibility must be verified by CI.
+- Live HTTPS text rendering of https://chawan.net/ passed with the packaged
+  launcher and the default macOS certificate bundle.
+- Installer tests keep an old native executable running while replacing its
+  file, and inject a copy failure to verify that the old file is retained.
+  Replacement is atomic per file, not for the entire installed version.
+
+External-opening tests use temporary fake openers and clipboard sinks. They
+verify routing and argument safety, not the installed GUI browser or system
+clipboard. The real X login page in Chawan remained blank and reported a missing
+`ReadableStream` API. The chosen product path is an explicit handoff to the
+system browser with `:x`; no X login, timeline, or write API is implemented.
+The image visibility toggle remains temporary: reload restores the configured
+default. Persistent sidebar, live command filtering, and a cross-tab picker
+remain future work.
+
+Linux x86_64/ARM64 and Darwin ARM64/Intel package acceptance is pending CI.
+
 # Initial validation (2026-10-10)
 
 Passed on the development Mac with Nim 2.2.10:

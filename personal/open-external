@@ -1,0 +1,18 @@
+#!/bin/sh
+# The browser supplies the URL as data, never as part of a shell command.
+set -eu
+case "${TINYBROWSER_EXTERNAL_URL-}" in
+    http://?*|https://?*) ;;
+    *) exit 2 ;;
+esac
+case "$(uname -s)" in
+    Darwin)
+        command -v open >/dev/null 2>&1 || exit 127
+        exec open "$TINYBROWSER_EXTERNAL_URL" >/dev/null 2>&1
+        ;;
+    Linux)
+        command -v xdg-open >/dev/null 2>&1 || exit 127
+        exec xdg-open "$TINYBROWSER_EXTERNAL_URL" >/dev/null 2>&1
+        ;;
+    *) exit 2 ;;
+esac

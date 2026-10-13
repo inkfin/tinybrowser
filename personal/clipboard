@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+# Clipboard text is always streamed through stdin/stdout, never evaluated.
+task_mode=${1:-}
+case "$task_mode" in copy|paste) ;; *) exit 2;; esac
+if [ "$(uname -s)" = Darwin ]; then
+    if [ "$task_mode" = copy ]; then exec pbcopy; else exec pbpaste; fi
+fi
+if [ -n "${WAYLAND_DISPLAY:-}" ]; then
+    if [ "$task_mode" = copy ] && command -v wl-copy >/dev/null 2>&1; then exec wl-copy; fi
+    if [ "$task_mode" = paste ] && command -v wl-paste >/dev/null 2>&1; then exec wl-paste --no-newline; fi
+fi
+if [ -n "${DISPLAY:-}" ]; then
+    if command -v xclip >/dev/null 2>&1; then
+        if [ "$task_mode" = copy ]; then exec xclip -selection clipboard -in; else exec xclip -selection clipboard -out; fi
+    fi
+    if command -v xsel >/dev/null 2>&1; then
+        if [ "$task_mode" = copy ]; then exec xsel -bi; else exec xsel -bo; fi
+    fi
+fi
+printf '%s\n' 'Clipboard unavailable: enable terminal OSC 52 or install a platform clipboard tool.' >&2
+exit 1

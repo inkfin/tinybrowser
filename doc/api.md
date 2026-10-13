@@ -192,7 +192,8 @@ Following properties (functions/getters) are defined by `Pager`:
 
 `reload()`
 : Open a new buffer with the current buffer's URL, replacing the current
-  buffer.
+  buffer. Preserve its reading position and scripting, cookie, and styling
+  settings.
 
 `reshape()`
 : Reshape the current buffer (=render the current page anew.)
@@ -302,10 +303,11 @@ Following properties (functions/getters) are defined by `Pager`:
 `closeMenu()`
 : Closes the menu if it is opened.
 
-`choose(options)` (Tinybrowser)
+`choose(options, position = {})` (Tinybrowser)
 : Show a centered native popup menu for an array of strings. Returns a promise
   resolving to the selected index, or -1 on cancellation. Empty arrays return -1.
-  Opening a new menu cancels the previous one.
+  Opening a new menu cancels the previous one. Optional `position.x` and
+  `position.y` anchor the menu at terminal-cell coordinates.
 
 `prompt(label, current = "")` (Tinybrowser)
 : Show a command-line input prompt. Returns a promise resolving to the text,
@@ -412,6 +414,11 @@ Following properties (functions/getters) are defined by `Buffer`:
 : Click the HTML element currently under the cursor.  `n` controls the
   number of clicks, e.g. `n = 2` is a double click.  (The number of clicks
   is only relevant in JS apps.)
+
+`openLinkInNewTab(background = true)` (Tinybrowser)
+: Open the HTTP(S) or local-file anchor under the cursor in a new tab.
+  Form controls and JavaScript URLs are ignored. Inspecting the anchor does
+  not dispatch website events. By default, keep the original tab selected.
 
 `cursorFirstLine()`, `cursorLastLine()`
 : Move to the first/last line in the buffer.

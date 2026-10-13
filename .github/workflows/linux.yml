@@ -1,4 +1,4 @@
-name: Linux builds
+name: Linux and macOS builds
 on:
   push:
     branches: [main]
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: linux-${{ github.ref }}
+  group: packages-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
@@ -20,36 +20,81 @@ jobs:
       matrix:
         include:
           - runner: ubuntu-24.04
+            os: linux
             arch: x86_64
           - runner: ubuntu-24.04-arm
+            os: linux
             arch: aarch64
+          - runner: macos-15
+            os: darwin
+            arch: arm64
+          - runner: macos-15-intel
+            os: darwin
+            arch: x86_64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
-      - name: Check personal commands
-        run: node --test tests/personal.test.cjs
+      - name: Check personal commands and installer
+        run: node --test tests/*.test.cjs
       - name: Check version and shell scripts
         run: |
-          for script in scripts/*.sh personal/tinybrowser; do sh -n "$script"; done
+          for script in scripts/*.sh personal/tinybrowser personal/open-external personal/clipboard; do
+            if [[ -f "$script" ]]; then sh -n "$script"; fi
+          done
           if [[ "$GITHUB_REF" == refs/tags/tiny-v* ]]; then
             test "${GITHUB_REF#refs/tags/tiny-v}" = "$(cat VERSION)"
           fi
       - name: Build a static Linux release
+        if: matrix.os == 'linux'
         run: |
           docker run --rm -v "$PWD:/src" -w /src \
             -e TINYBROWSER_UID="$(id -u)" -e TINYBROWSER_GID="$(id -g)" \
             alpine:3.22 sh -c 'sh scripts/build-linux.sh && chown -R "$TINYBROWSER_UID:$TINYBROWSER_GID" dist'
-      - name: Check archive size and static binaries
+      - name: Install macOS build dependencies
+        if: matrix.os == 'darwin'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: brew install nim pkgconf openssl libssh2 brotli
+      - name: Build a portable macOS release
+        if: matrix.os == 'darwin'
+        run: sh scripts/build-macos.sh
+      - name: Check Linux static binaries
+        if: matrix.os == 'linux'
         run: |
-          du -h dist/*.tar.gz
           file "dist/tinybrowser-$(cat VERSION)-linux-${{ matrix.arch }}/bin/cha"
           if readelf -l "dist/tinybrowser-$(cat VERSION)-linux-${{ matrix.arch }}/bin/cha" | grep -q INTERP; then
             echo 'Unexpected dynamic interpreter' >&2
             exit 1
           fi
+      - name: Check macOS architecture and system-only dependencies
+        if: matrix.os == 'darwin'
+        run: |
+          package="dist/tinybrowser-$(cat VERSION)-darwin-${{ matrix.arch }}"
+          find "$package/bin" "$package/libexec" -type f -print0 | while IFS= read -r -d '' binary; do
+            if file "$binary" | grep -q 'Mach-O'; then
+              test "$(lipo -archs "$binary")" = '${{ matrix.arch }}'
+              otool -L "$binary"
+              while IFS= read -r dependency; do
+                case "$dependency" in
+                  /usr/lib/*|/System/Library/*) ;;
+                  *) echo "Non-system runtime dependency: $dependency" >&2; exit 1;;
+                esac
+              done < <(otool -L "$binary" | awk 'NR > 1 {print $1}')
+            fi
+          done
+      - name: Check archive and write checksum
+        run: |
+          du -h dist/*.tar.gz
           cd dist
-          sha256sum *.tar.gz > SHA256SUMS-${{ matrix.arch }}
+          if [[ '${{ matrix.os }}' == linux ]]; then
+            sha256sum *.tar.gz > SHA256SUMS-${{ matrix.os }}-${{ matrix.arch }}
+          else
+            shasum -a 256 *.tar.gz > SHA256SUMS-${{ matrix.os }}-${{ matrix.arch }}
+          fi
       - name: Install test-only terminal emulator
         run: |
           python3 -m venv work/qa
@@ -58,11 +103,13 @@ jobs:
         env:
           TINYBROWSER_TEST_HTTPS: "1"
         run: |
-          mkdir -p work/screens
-          work/qa/bin/python tests/smoke.py "dist/tinybrowser-$(cat VERSION)-linux-${{ matrix.arch }}"
+          mkdir -p work/screens work/package-test
+          package="tinybrowser-$(cat VERSION)-${{ matrix.os }}-${{ matrix.arch }}"
+          tar -xzf "dist/$package.tar.gz" -C work/package-test
+          work/qa/bin/python tests/smoke.py "work/package-test/$package"
       - uses: actions/upload-artifact@v4
         with:
-          name: tinybrowser-linux-${{ matrix.arch }}
+          name: tinybrowser-${{ matrix.os }}-${{ matrix.arch }}
           path: |
             dist/*.tar.gz
             dist/SHA256SUMS-*
@@ -70,7 +117,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: terminal-checks-${{ matrix.arch }}
+          name: terminal-checks-${{ matrix.os }}-${{ matrix.arch }}
           path: work/screens/
 
   release:
@@ -83,10 +130,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          pattern: tinybrowser-linux-*
+          pattern: tinybrowser-*
           path: release-assets
           merge-multiple: true
-      - name: Publish tested Linux downloads
+      - name: Publish tested Linux and macOS downloads
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

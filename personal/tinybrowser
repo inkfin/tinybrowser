@@ -3,6 +3,10 @@ set -eu
 task_bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 task_root=$(CDPATH='' cd -- "$task_bin_dir/.." && pwd)
 export TINYBROWSER_SHARE="$task_root/share/tinybrowser"
+# Portable macOS packages use Apple's CA bundle, not Homebrew's build path.
+if [ "$(uname -s)" = Darwin ] && [ "${SSL_CERT_FILE+x}" != x ] && [ "${SSL_CERT_DIR+x}" != x ]; then
+    export SSL_CERT_FILE=/etc/ssl/cert.pem
+fi
 export CHA_DIR="${TINYBROWSER_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/tinybrowser}"
 export CHA_DATA_DIR="${TINYBROWSER_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/tinybrowser}"
 if [ "${1:-}" = '--version' ]; then

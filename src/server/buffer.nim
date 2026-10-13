@@ -1545,6 +1545,15 @@ proc getSelectionText(bc: BufferContext; handle: PagerHandle;
       s &= bc.lines[y].str.expandPUATabsHard()
   move(s)
 
+proc getLinkAt(bc: BufferContext; handle: PagerHandle; x, y: int): string
+    {.proxy.} =
+  # Inspect an anchor without dispatching a click or submitting a form.
+  let element = bc.getCursorElement(x, y).getClickable()
+  if element of HTMLAnchorElement:
+    if url := HTMLAnchorElement(element).reinitURL():
+      return $url
+  ""
+
 proc getLinks(bc: BufferContext; handle: PagerHandle): seq[string] {.proxy.} =
   result = newSeq[string]()
   if bc.document != nil:
@@ -1726,6 +1735,7 @@ const ProxyMap = [
   bcFindRevNthLink: findRevNthLinkCmd,
   bcForceReshape: forceReshapeCmd,
   bcGetLines: getLinesCmd,
+  bcGetLinkAt: getLinkAtCmd,
   bcGetLinks: getLinksCmd,
   bcGetSelectionText: getSelectionTextCmd,
   bcGetTitle: getTitleCmd,

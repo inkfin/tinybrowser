@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><title>Tinybrowser help</title><body>
 <h1>Keys &amp; commands</h1>
-<p>Space opens the menu. Use j/k or arrows to select, Enter to run, Escape/q to cancel.</p>
-<p>Ctrl-P asks for a command name, then shows matching actions. The : bar accepts named commands; it does not evaluate JavaScript.</p>
+<p>Space opens the menu. Use j/k or arrows to select, Enter to run, Escape/q to cancel. Right click opens the same actions with extra choices for a link, image or selection.</p>
+<p>Ctrl-P asks for a command name, then shows matching actions. Use the : bar for the commands below.</p>
 <h2>Navigation</h2><pre>hjkl         Move (counts work: 10j)
 gg / G       First / last line
 Ctrl-d/u     Half page down / up
@@ -10,14 +10,20 @@ f / F        Follow link hint / show hints
 H / L        Previous / next buffer
 gt / gT      Next / previous tab
 x            Close buffer
-o / O        Open / edit URL
+o / O        Open / edit URL or search words
+Ctrl-L       Edit URL or search words
 r            Reload
 yy / yl      Copy page / link URL
 b / a        Bookmarks / bookmark page
 gi / gr      Images / website CSS
+gx / gX      Open page / link in system browser
 gh / F1      Home / help
 q            Close menu, or quit browser</pre>
+<h2>Mouse</h2><p>Click a link to follow it. Middle click a link to open it in a background tab; gt switches to the next tab. Use the wheel to scroll, drag to select text, then y or right click &rarr; Copy selected text. Click a menu entry to run it, or click outside to cancel.</p>
+<p>Shift-drag uses your terminal's own selection in terminals that support it. If mouse events are unavailable, all commands remain available from the keyboard.</p>
 <h2>Command bar examples</h2><pre>:open https://example.org
+:open ./notes.html
+:open Python async guide
 :search Nim language
 :tabopen https://chawan.net
 :buffers
@@ -26,12 +32,21 @@ q            Close menu, or quit browser</pre>
 :images
 :style
 :javascript
+:cookies
 :copy
+:copy-link
+:copy-selection
+:external
+:external-link
+:x
 :save
 :source
 :home
 :help
 :q</pre>
-<p>Website JS remains disabled unless explicitly toggled for that page. Reader styling hides no content; gr restores website CSS.</p>
-<p>Only one native menu runs at a time. Small terminals scroll the menu. Images depend on Kitty or Sixel support; direct terminal use works best.</p>
+<p>Plain words in the URL bar become a web search. Explicit URLs, s:/w: shortcuts and paths such as ./notes.html are kept as entered.</p>
+<p>Website JS and cookies start disabled. :javascript and :cookies toggle them for the current page; the menu shows their state. Reader styling hides no content; gr restores website CSS. Reload and style changes retain your reading position.</p>
+<p>:x opens X in your system browser. :external opens the current web page there, and :external-link opens the link under the cursor. These actions support http(s) URLs.</p>
+<p>Upgrades keep your keybindings. If gx/gX are not in your existing profile, use :external/:external-link or add the shortcuts to your config.</p>
+<p>Small terminals scroll the menu. Images depend on Kitty or Sixel support; direct terminal use works best.</p>
 </body></html>

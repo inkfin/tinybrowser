@@ -4,37 +4,40 @@
 
 浏览器不依赖 Chromium、WebKit、Electron、Node.js、Python 或 fzf。Node/Python 仅用于开发和 CI 检查。
 
-## Linux 下载
+## Linux / macOS 安装
 
-Linux x86_64 和 ARM64 的静态构建、终端运行和 HTTPS 检查已通过。版本标签自动发布带校验和的下载包。
+支持 Linux x86_64 / ARM64，以及 macOS 15+ 的 Intel / Apple Silicon。
+发布包不需要 Homebrew、Nim 或其他开发工具；macOS 包将第三方库静态链接，只使用系统动态库。
 
-打开 [Releases](https://github.com/inkfin/tinybrowser/releases/latest)，按 CPU 选择：
-
-- `tinybrowser-*-linux-x86_64.tar.gz`：Intel/AMD 64 位。
-- `tinybrowser-*-linux-aarch64.tar.gz`：ARM64。
-
-首个版本 `0.1.0` 的下载与解压大小（MB，按 1,000,000 字节）：
-
-| 架构 | 压缩下载 | 解压文件合计 |
-| --- | --- | --- |
-| x86_64 | 6.13 MB | 12.38 MB |
-| ARM64 | 6.46 MB | 11.81 MB |
-
-两个正式 Release 下载包已重新下载并通过 SHA256 校验。
-
-下载同架构的 SHA256SUMS 文件，在同一目录运行 `sha256sum -c SHA256SUMS-x86_64`（ARM64 对应 aarch64）。
+一键安装到 `~/.local`，自动识别系统与架构、校验 SHA256，保留已有用户配置和浏览数据：
 
 ```sh
-tar -xzf tinybrowser-0.1.0-linux-x86_64.tar.gz
-cd tinybrowser-0.1.0-linux-x86_64
-./bin/tinybrowser
-# 可选：安装到 ~/.local，配置不会被覆盖
-./install.sh
-# ~/.local/bin 在 PATH 中时：
-tinybrowser https://example.org
+curl -fsSL https://raw.githubusercontent.com/inkfin/tinybrowser/tiny-v0.2.0/scripts/get.sh | sh
+~/.local/bin/tinybrowser
 ```
 
-使用静态链接的 musl Linux 构建；不需要安装浏览器引擎。HTTPS 仍需要系统 CA 证书（发行版的 `ca-certificates` 包）。图片需要支持 Kitty 图形协议或 Sixel 的终端，建议先在 Kitty 中直接运行。纯文字终端仍可使用文字功能。
+也可以先下载并查看 `scripts/get.sh` 再执行。设置 `TINYBROWSER_PREFIX` 可改变安装位置。
+手动下载见 [Releases](https://github.com/inkfin/tinybrowser/releases/latest)：
+
+| 平台 | 下载文件 | 校验文件 |
+| --- | --- | --- |
+| Linux Intel/AMD | `tinybrowser-0.2.0-linux-x86_64.tar.gz` | `SHA256SUMS-linux-x86_64` |
+| Linux ARM64 | `tinybrowser-0.2.0-linux-aarch64.tar.gz` | `SHA256SUMS-linux-aarch64` |
+| macOS Apple Silicon | `tinybrowser-0.2.0-darwin-arm64.tar.gz` | `SHA256SUMS-darwin-arm64` |
+| macOS Intel | `tinybrowser-0.2.0-darwin-x86_64.tar.gz` | `SHA256SUMS-darwin-x86_64` |
+
+Linux 用 `sha256sum -c SHA256SUMS-linux-x86_64`，macOS 用 `shasum -a 256 -c SHA256SUMS-darwin-arm64`，按实际架构替换名称。解压后运行 `./bin/tinybrowser`，或用 `./install.sh` 安装。
+
+Linux 使用 musl 静态构建，HTTPS 需要发行版的 `ca-certificates`。macOS 默认使用 `/etc/ssl/cert.pem`，尊重用户显式设置的 `SSL_CERT_FILE` / `SSL_CERT_DIR`。图片需要支持 Kitty 图形协议或 Sixel 的终端；纯文字终端仍可阅读。
+
+## X 和复杂网页
+
+`:x` 在系统默认浏览器打开 X；登录、关注流和互动由系统浏览器处理。
+`gx` / `:external` 打开当前网页，右键链接可选择在系统浏览器打开。
+这是明确的外部浏览器交接，Tinybrowser 本身没有实现 X 登录或时间线。
+
+现有 Chawan 运行 X 登录页会遇到缺少网页 API 的错误。网站 JS 默认关闭，按页面开启也不代表任意 Web 应用兼容。
+开发文档和静态论坛阅读仍是 Tinybrowser 的主要用途。
 
 ## 操作
 
@@ -47,19 +50,24 @@ tinybrowser https://example.org
 | `f/F` | 跟随链接提示 / 仅显示提示 |
 | `/ ? n N` | 页内搜索、前后匹配 |
 | `H/L`、`gt/gT`、`x` | 前后 buffer、前后标签、关闭 buffer |
-| `o/O`、`r` | 打开/编辑 URL、刷新 |
+| `o/O`、`r` | 打开/编辑地址或搜索、保留 JS/Cookie/CSS 设置刷新 |
+| `gx`、`:x` | 系统浏览器打开当前网页 / X |
 | `yy/yl`、`b/a` | 复制页面/链接 URL、书签/添加书签 |
-| `gi/gr` | 切换图片 / 当前页面的网站 CSS |
+| `gi/gr` | 切换图片 / 当前页面的网站 CSS，保留阅读位置 |
 | `gh`、`F1`、`q` | 主页、帮助、退出 |
 
-命令栏支持 `open/o`、`search/s`、`tabopen/t`、`buffers`、`bookmarks`、`bookmark`、`history`、`reload`、`images`、`style`、`javascript`、`copy`、`save`、`source`、`home`、`help`、`quit/q`。
-输入按固定命令分派，不会当作 JavaScript 或 shell 执行。完整帮助也可在浏览器里按 F1 查看。
+命令栏支持 `open/o`、`search/s`、`tabopen/t`、`buffers`、`bookmarks`、`bookmark`、`history`、`reload`、`images`、`style`、`javascript`、`cookies`、`copy`、`external`、`external-link`、`x`、`save`、`source`、`home`、`help`、`quit/q`。
+输入按固定命令分派，不会当作 JavaScript 或 shell 执行。`:cookies` 切换当前页是否启用 Cookie；刷新保留当前页的 Cookie、JS 和样式设置。这些开关不是跨站永久规则，Cookie 的保存策略仍由用户配置决定。
+
+鼠标单击打开链接，中键链接在后台新标签打开，`gt` 切换过去；拖动选择文字，右键复制选区。空格和右键共用动作表，右键额外提供链接、图片和选区操作。点击底部状态栏可以编辑地址。完整帮助在 F1 中查看。
 
 ## 默认行为与自定义
 
 图片默认开启；网站 JavaScript 和 Cookie 默认关闭。个人菜单脚本独立于网站 JavaScript，不需要开启网页脚本才能操作。`:javascript` 只切换当前页面。默认关闭网站 CSS，应用 88 列正文宽度、中文/代码块/表格阅读样式；`gr` 切换网站 CSS，不隐藏网站正文。
 
-首次启动将默认配置复制到 `~/.config/tinybrowser/config.toml`。后续更新保留你的修改。历史、书签等保存在 `~/.local/share/tinybrowser/`。支持 XDG 路径，以及 `TINYBROWSER_CONFIG_DIR` / `TINYBROWSER_DATA_DIR` 指定独立配置。
+`gi` 临时切换当前页图片，刷新或重新加载后恢复配置默认值；要持续禁用图片，请修改 `[buffer] images`。
+
+首次启动将默认配置复制到 `~/.config/tinybrowser/config.toml`。后续更新保留你的修改。历史、书签等保存在 `~/.local/share/tinybrowser/`。升级保留旧配置，因此旧配置不会自动获得新增快捷键；`:x`、`:external` 和菜单仍可使用，新默认键位可参考包内 `share/tinybrowser/config.toml`。支持 XDG 路径，以及 `TINYBROWSER_CONFIG_DIR` / `TINYBROWSER_DATA_DIR` 指定独立配置。
 
 主要修改入口：
 
@@ -72,25 +80,24 @@ tinybrowser https://example.org
 
 ## 构建与发布
 
-每次 main 推送或 PR 会在 GitHub Actions 原生 x86_64 / ARM64 runner 上编译 Alpine 静态包。两种架构都经过命令逻辑检查、真实 PTY 菜单/命令栏/排版/PNG 输出检查，成功后上传 Actions artifacts。
+每次 main 推送或 PR 在四个原生 runner 上构建：Linux x86_64 / ARM64 和 Darwin Intel / Apple Silicon。
+Linux 在 Alpine 中静态构建；macOS 使用静态第三方库，并检查依赖最低系统版本、目标架构和系统动态库路径。
+CI 解压实际下载包后运行命令逻辑、安装、真实 PTY 键盘/鼠标、阅读状态、图片协议与 HTTPS 检查。
 
-更新 VERSION 和 `docs/release-notes.md` 后，推送相同版本的 `tiny-v*` 标签：
-
-```sh
-git tag tiny-v0.1.0
-git push origin tiny-v0.1.0
-```
-
-两种架构的构建和检查全部成功后，自动创建 GitHub Release，附带两个压缩包和 SHA256SUMS 文件。上游的 `v*` 标签不会触发个人浏览器发布。
-
-本地 Linux 构建（需要 Docker）：
+更新 `VERSION` 和 `docs/release-notes.md`，先等待 main 的四项 CI 全部通过，再推送匹配的 `tiny-v*` 标签。
+标签流水线重新验证，全部成功后创建 GitHub Release，附带四个压缩包和各自的 SHA256SUMS。上游 `v*` 标签不会触发发布。
 
 ```sh
+# 本地 Linux，需 Docker
 docker run --rm -v "$PWD:/src" -w /src alpine:3.22 sh scripts/build-linux.sh
-node --test tests/personal.test.cjs
+# 本地 macOS，需 Nim、make、pkg-config 及 OpenSSL/libssh2/brotli 开发库
+sh scripts/build-macos.sh
+node --test tests/*.test.cjs
 ```
 
-原生构建依赖与命令见 [README.upstream.md](README.upstream.md)。上游来源与更新流程见 [UPSTREAM.md](UPSTREAM.md)。
+较新 Homebrew 构建的静态库可能要求高于 macOS 15 的版本。本地可用 `TINYBROWSER_MACOS_TARGET` 明确提高目标，但这样的产物不能标成兼容 macOS 15；正式包只来自指定 CI runner。
+
+上游来源与修改范围见 [UPSTREAM.md](UPSTREAM.md)，验证记录见 [docs/validation.md](docs/validation.md)。
 
 ## 使用边界
 

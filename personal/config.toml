@@ -23,6 +23,11 @@ th, td { padding-left: 1ch; padding-right: 1ch; }
 [input]
 vi-numeric-prefix = true
 link-hint-chars = 'asdfghjklqwertyuiopzxcvbnm'
+use-mouse = 'auto'
+
+[external]
+copy-cmd = '"$TINYBROWSER_SHARE/clipboard" copy'
+paste-cmd = '"$TINYBROWSER_SHARE/clipboard" paste'
 
 [display]
 image-mode = 'auto'
@@ -55,8 +60,8 @@ ignore-case = 'auto'
 'o' = 'loadEmpty'
 'O' = 'load'
 'r' = 'reloadBuffer'
-'y y' = 'copyURL'
-'y l' = 'copyCursorLink'
+'y y' = '() => tiny.dispatch("copy")'
+'y l' = '() => tiny.dispatch("copy-link")'
 'b' = 'openBookmarks'
 'a' = 'addBookmark'
 ':' = '() => tiny.commandBar()'
@@ -65,6 +70,8 @@ ignore-case = 'auto'
 'g i' = 'toggleImages'
 'g r' = '() => tiny.toggleStyle()'
 'g h' = '() => tiny.home()'
+'g x' = '() => tiny.dispatch("external")'
+'g X' = '() => tiny.dispatch("external-link")'
 'F1' = '() => tiny.help()'
 'ESC' = '() => tiny.cancel()'
 'q' = '() => tiny.closeOrQuit()'
